@@ -5,7 +5,7 @@
 package srv
 
 import (
-	"code.google.com/p/go9p/p"
+	"github.com/jsouthworth/ixp"
 	"log"
 	"sync"
 	"time"
@@ -24,7 +24,7 @@ type FStatOp interface {
 // If not implemented, "permission denied" error will be sent back. If the
 // operation returns an Error, the error is send back to the client.
 type FWstatOp interface {
-	Wstat(*FFid, *p.Dir) error
+	Wstat(*FFid, *ixp.Dir) error
 }
 
 // If the FReadOp interface is implemented, the Read operation will be called
@@ -82,7 +82,7 @@ const (
 // The File type represents a file (or directory) served by the file server.
 type File struct {
 	sync.Mutex
-	p.Dir
+	ixp.Dir
 	flags FFlags
 
 	Parent        *File // parent
@@ -106,9 +106,9 @@ type Fsrv struct {
 
 var lock sync.Mutex
 var qnext uint64
-var Eexist = &p.Error{"file already exists", p.EEXIST}
-var Enoent = &p.Error{"file not found", p.ENOENT}
-var Enotempty = &p.Error{"directory not empty", p.EPERM}
+var Eexist = &ixp.Error{"file already exists", ixp.EEXIST}
+var Enoent = &ixp.Error{"file not found", ixp.ENOENT}
+var Enotempty = &ixp.Error{"directory not empty", ixp.EPERM}
 
 // Creates a file server with root as root directory
 func NewFileSrv(root *File) *Fsrv {
@@ -121,7 +121,7 @@ func NewFileSrv(root *File) *Fsrv {
 
 // Initializes the fields of a file and add it to a directory.
 // Returns nil if successful, or an error.
-func (f *File) Add(dir *File, name string, uid p.User, gid p.Group, mode uint32, ops interface{}) error {
+func (f *File) Add(dir *File, name string, uid ixp.User, gid ixp.Group, mode uint32, ops interface{}) error {
 
 	lock.Lock()
 	qpath := qnext
@@ -141,7 +141,7 @@ func (f *File) Add(dir *File, name string, uid p.User, gid p.Group, mode uint32,
 		f.Uidnum = uint32(uid.Id())
 	} else {
 		f.Uid = "none"
-		f.Uidnum = p.NOUID
+		f.Uidnum = ixp.NOUID
 	}
 
 	if gid != nil {
@@ -149,11 +149,11 @@ func (f *File) Add(dir *File, name string, uid p.User, gid p.Group, mode uint32,
 		f.Gidnum = uint32(gid.Id())
 	} else {
 		f.Gid = "none"
-		f.Gidnum = p.NOUID
+		f.Gidnum = ixp.NOUID
 	}
 
 	f.Muid = ""
-	f.Muidnum = p.NOUID
+	f.Muidnum = ixp.NOUID
 	f.Ext = ""
 
 	if dir != nil {
@@ -244,8 +244,8 @@ func (p *File) Find(name string) *File {
 
 // Checks if the specified user has permission to perform
 // certain operation on a file. Perm contains one or more
-// of p.DMREAD, p.DMWRITE, and p.DMEXEC.
-func (f *File) CheckPerm(user p.User, perm uint32) bool {
+// of ixp.DMREAD, ixp.DMWRITE, and ixp.DMEXEC.
+func (f *File) CheckPerm(user ixp.User, perm uint32) bool {
 	if user == nil {
 		return false
 	}
@@ -304,7 +304,7 @@ func (*Fsrv) Walk(req *Req) {
 	}
 
 	nfid := req.Newfid.Aux.(*FFid)
-	wqids := make([]p.Qid, len(tc.Wname))
+	wqids := make([]ixp.Qid, len(tc.Wname))
 	i := 0
 	f := fid.F
 	for ; i < len(tc.Wname); i++ {
@@ -314,8 +314,8 @@ func (*Fsrv) Walk(req *Req) {
 			wqids[i] = f.Qid
 			continue
 		}
-		if (wqids[i].Type & p.QTDIR) > 0 {
-			if !f.CheckPerm(req.Fid.User, p.DMEXEC) {
+		if (wqids[i].Type & ixp.QTDIR) > 0 {
+			if !f.CheckPerm(req.Fid.User, ixp.DMEXEC) {
 				break
 			}
 		}
@@ -342,16 +342,16 @@ func mode2Perm(mode uint8) uint32 {
 	var perm uint32 = 0
 
 	switch mode & 3 {
-	case p.OREAD:
-		perm = p.DMREAD
-	case p.OWRITE:
-		perm = p.DMWRITE
-	case p.ORDWR:
-		perm = p.DMREAD | p.DMWRITE
+	case ixp.OREAD:
+		perm = ixp.DMREAD
+	case ixp.OWRITE:
+		perm = ixp.DMWRITE
+	case ixp.ORDWR:
+		perm = ixp.DMREAD | ixp.DMWRITE
 	}
 
-	if (mode & p.OTRUNC) != 0 {
-		perm |= p.DMWRITE
+	if (mode & ixp.OTRUNC) != 0 {
+		perm |= ixp.DMWRITE
 	}
 
 	return perm
@@ -381,7 +381,7 @@ func (*Fsrv) Create(req *Req) {
 	tc := req.Tc
 
 	dir := fid.F
-	if !dir.CheckPerm(req.Fid.User, p.DMWRITE) {
+	if !dir.CheckPerm(req.Fid.User, ixp.DMWRITE) {
 		req.RespondError(Eperm)
 		return
 	}
@@ -407,9 +407,9 @@ func (*Fsrv) Read(req *Req) {
 	f := fid.F
 	tc := req.Tc
 	rc := req.Rc
-	p.InitRread(rc, tc.Count)
+	ixp.InitRread(rc, tc.Count)
 
-	if f.Mode&p.DMDIR != 0 {
+	if f.Mode&ixp.DMDIR != 0 {
 		// directory
 		if tc.Offset == 0 {
 			var g *File
@@ -434,7 +434,7 @@ func (*Fsrv) Read(req *Req) {
 				continue
 			}
 
-			sz := p.PackDir(&g.Dir, b, req.Conn.Dotu)
+			sz := ixp.PackDir(&g.Dir, b, req.Conn.Dotu)
 			g.Unlock()
 			if sz == 0 {
 				break
@@ -459,7 +459,7 @@ func (*Fsrv) Read(req *Req) {
 		}
 	}
 
-	p.SetRreadCount(rc, uint32(n))
+	ixp.SetRreadCount(rc, uint32(n))
 	req.Respond()
 }
 

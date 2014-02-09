@@ -5,8 +5,8 @@
 package srv
 
 import (
-	"code.google.com/p/go9p/p"
 	"fmt"
+	"github.com/jsouthworth/ixp"
 	"log"
 	"net"
 )
@@ -22,7 +22,7 @@ func (srv *Srv) NewConn(c net.Conn) {
 	conn.reqs = make(map[uint16]*Req)
 	conn.reqout = make(chan *Req, srv.Maxpend)
 	conn.done = make(chan bool)
-	conn.rchan = make(chan *p.Fcall, 64)
+	conn.rchan = make(chan *ixp.Fcall, 64)
 
 	srv.Lock()
 	if srv.conns == nil {
@@ -87,7 +87,7 @@ func (conn *Conn) recv() {
 
 		pos += n
 		for pos > 4 {
-			sz, _ := p.Gint32(buf)
+			sz, _ := ixp.Gint32(buf)
 			if sz > conn.Msize {
 				log.Println("bad client connection: ", conn.conn.RemoteAddr())
 				conn.conn.Close()
@@ -104,7 +104,7 @@ func (conn *Conn) recv() {
 
 				break
 			}
-			fc, err, fcsize := p.Unpack(buf, conn.Dotu)
+			fc, err, fcsize := ixp.Unpack(buf, conn.Dotu)
 			if err != nil {
 				log.Println(fmt.Sprintf("invalid packet : %v %v", err, buf))
 				conn.conn.Close()
@@ -118,7 +118,7 @@ func (conn *Conn) recv() {
 			case req.Rc = <-conn.rchan:
 				break
 			default:
-				req.Rc = p.NewFcall(conn.Msize)
+				req.Rc = ixp.NewFcall(conn.Msize)
 			}
 
 			req.Conn = conn
@@ -169,7 +169,7 @@ func (conn *Conn) send() {
 			return
 
 		case req := <-conn.reqout:
-			p.SetTag(req.Rc, req.Tc.Tag)
+			ixp.SetTag(req.Rc, req.Tc.Tag)
 			conn.Lock()
 			conn.rsz += uint64(req.Rc.Size)
 			conn.npend--
@@ -216,7 +216,7 @@ func (conn *Conn) LocalAddr() net.Addr {
 	return conn.conn.LocalAddr()
 }
 
-func (conn *Conn) logFcall(fc *p.Fcall) {
+func (conn *Conn) logFcall(fc *ixp.Fcall) {
 	if conn.Debuglevel&DbgLogPackets != 0 {
 		pkt := make([]byte, len(fc.Pkt))
 		copy(pkt, fc.Pkt)
@@ -224,7 +224,7 @@ func (conn *Conn) logFcall(fc *p.Fcall) {
 	}
 
 	if conn.Debuglevel&DbgLogFcalls != 0 {
-		f := new(p.Fcall)
+		f := new(ixp.Fcall)
 		*f = *fc
 		f.Pkt = nil
 		conn.Srv.Log.Log(f, conn, DbgLogFcalls)
@@ -234,7 +234,7 @@ func (conn *Conn) logFcall(fc *p.Fcall) {
 func (srv *Srv) StartNetListener(ntype, addr string) error {
 	l, err := net.Listen(ntype, addr)
 	if err != nil {
-		return &p.Error{err.Error(), p.EIO}
+		return &ixp.Error{err.Error(), ixp.EIO}
 	}
 
 	return srv.StartListener(l)
@@ -248,7 +248,7 @@ func (srv *Srv) StartListener(l net.Listener) error {
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			return &p.Error{err.Error(), p.EIO}
+			return &ixp.Error{err.Error(), ixp.EIO}
 		}
 
 		srv.NewConn(c)

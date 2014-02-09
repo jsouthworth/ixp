@@ -4,12 +4,12 @@
 
 package clnt
 
-import "code.google.com/p/go9p/p"
+import "github.com/jsouthworth/ixp"
 
 // Returns the metadata for the file associated with the Fid, or an Error.
-func (clnt *Clnt) Stat(fid *Fid) (*p.Dir, error) {
+func (clnt *Clnt) Stat(fid *Fid) (*ixp.Dir, error) {
 	tc := clnt.NewFcall()
-	err := p.PackTstat(tc, fid.Fid)
+	err := ixp.PackTstat(tc, fid.Fid)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func (clnt *Clnt) Stat(fid *Fid) (*p.Dir, error) {
 }
 
 // Returns the metadata for a named file, or an Error.
-func (clnt *Clnt) FStat(path string) (*p.Dir, error) {
+func (clnt *Clnt) FStat(path string) (*ixp.Dir, error) {
 	fid, err := clnt.FWalk(path)
 	if err != nil {
 		return nil, err
@@ -35,9 +35,9 @@ func (clnt *Clnt) FStat(path string) (*p.Dir, error) {
 }
 
 // Modifies the data of the file associated with the Fid, or an Error.
-func (clnt *Clnt) Wstat(fid *Fid, dir *p.Dir) error {
+func (clnt *Clnt) Wstat(fid *Fid, dir *ixp.Dir) error {
 	tc := clnt.NewFcall()
-	err := p.PackTwstat(tc, fid.Fid, dir, clnt.Dotu)
+	err := ixp.PackTwstat(tc, fid.Fid, dir, clnt.Dotu)
 	if err != nil {
 		return err
 	}

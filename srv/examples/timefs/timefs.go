@@ -5,10 +5,10 @@
 package main
 
 import (
-	"code.google.com/p/go9p/p"
-	"code.google.com/p/go9p/p/srv"
 	"flag"
 	"fmt"
+	"github.com/jsouthworth/ixp"
+	"github.com/jsouthworth/ixp/srv"
 	"log"
 	"os"
 	"time"
@@ -57,20 +57,20 @@ func main() {
 	var s *srv.Fsrv
 
 	flag.Parse()
-	user := p.OsUsers.Uid2User(os.Geteuid())
+	user := ixp.OsUsers.Uid2User(os.Geteuid())
 	root := new(srv.File)
-	err = root.Add(nil, "/", user, nil, p.DMDIR|0555, nil)
+	err = root.Add(nil, "/", user, nil, ixp.DMDIR|0555, nil)
 	if err != nil {
 		goto error
 	}
 
 	tm = new(Time)
-	err = tm.Add(root, "time", p.OsUsers.Uid2User(os.Geteuid()), nil, 0444, tm)
+	err = tm.Add(root, "time", ixp.OsUsers.Uid2User(os.Geteuid()), nil, 0444, tm)
 	if err != nil {
 		goto error
 	}
 	ntm = new(InfTime)
-	err = ntm.Add(root, "inftime", p.OsUsers.Uid2User(os.Geteuid()), nil, 0444, ntm)
+	err = ntm.Add(root, "inftime", ixp.OsUsers.Uid2User(os.Geteuid()), nil, 0444, ntm)
 	if err != nil {
 		goto error
 	}

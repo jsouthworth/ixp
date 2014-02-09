@@ -5,7 +5,7 @@
 package clnt
 
 import (
-	"code.google.com/p/go9p/p"
+	"github.com/jsouthworth/ixp"
 	"strings"
 )
 
@@ -13,9 +13,9 @@ import (
 // sequence and associates the resulting file with newfid. If no wnames
 // were walked successfully, an Error is returned. Otherwise a slice with a
 // Qid for each walked name is returned.
-func (clnt *Clnt) Walk(fid *Fid, newfid *Fid, wnames []string) ([]p.Qid, error) {
+func (clnt *Clnt) Walk(fid *Fid, newfid *Fid, wnames []string) ([]ixp.Qid, error) {
 	tc := clnt.NewFcall()
-	err := p.PackTwalk(tc, fid.Fid, newfid.Fid, wnames)
+	err := ixp.PackTwalk(tc, fid.Fid, newfid.Fid, wnames)
 	if err != nil {
 		return nil, err
 	}
@@ -66,12 +66,12 @@ func (clnt *Clnt) FWalk(path string) (*Fid, error) {
 		}
 
 		tc := clnt.NewFcall()
-		err = p.PackTwalk(tc, fid.Fid, newfid.Fid, wnames[0:n])
+		err = ixp.PackTwalk(tc, fid.Fid, newfid.Fid, wnames[0:n])
 		if err != nil {
 			goto error
 		}
 
-		var rc *p.Fcall
+		var rc *ixp.Fcall
 		rc, err = clnt.Rpc(tc)
 		if err != nil {
 			goto error
@@ -79,7 +79,7 @@ func (clnt *Clnt) FWalk(path string) (*Fid, error) {
 
 		newfid.walked = true
 		if len(rc.Wqid) != n {
-			err = &p.Error{"file not found", p.ENOENT}
+			err = &ixp.Error{"file not found", ixp.ENOENT}
 			goto error
 		}
 

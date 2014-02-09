@@ -7,7 +7,7 @@
 package main
 
 import (
-	"code.google.com/p/go9p/p/srv"
+	"github.com/jsouthworth/ixp/srv"
 )
 
 func extraFuncs() {

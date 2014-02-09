@@ -5,7 +5,7 @@
 package clnt
 
 import (
-	"code.google.com/p/go9p/p"
+	"github.com/jsouthworth/ixp"
 	"strings"
 )
 
@@ -13,7 +13,7 @@ import (
 // the operation is successful.
 func (clnt *Clnt) Open(fid *Fid, mode uint8) error {
 	tc := clnt.NewFcall()
-	err := p.PackTopen(tc, fid.Fid, mode)
+	err := ixp.PackTopen(tc, fid.Fid, mode)
 	if err != nil {
 		return err
 	}
@@ -25,8 +25,8 @@ func (clnt *Clnt) Open(fid *Fid, mode uint8) error {
 
 	fid.Qid = rc.Qid
 	fid.Iounit = rc.Iounit
-	if fid.Iounit == 0 || fid.Iounit > clnt.Msize-p.IOHDRSZ {
-		fid.Iounit = clnt.Msize - p.IOHDRSZ
+	if fid.Iounit == 0 || fid.Iounit > clnt.Msize-ixp.IOHDRSZ {
+		fid.Iounit = clnt.Msize - ixp.IOHDRSZ
 	}
 	fid.Mode = mode
 	return nil
@@ -36,7 +36,7 @@ func (clnt *Clnt) Open(fid *Fid, mode uint8) error {
 // if the operation is successful.
 func (clnt *Clnt) Create(fid *Fid, name string, perm uint32, mode uint8, ext string) error {
 	tc := clnt.NewFcall()
-	err := p.PackTcreate(tc, fid.Fid, name, perm, mode, ext, clnt.Dotu)
+	err := ixp.PackTcreate(tc, fid.Fid, name, perm, mode, ext, clnt.Dotu)
 	if err != nil {
 		return err
 	}
@@ -48,8 +48,8 @@ func (clnt *Clnt) Create(fid *Fid, name string, perm uint32, mode uint8, ext str
 
 	fid.Qid = rc.Qid
 	fid.Iounit = rc.Iounit
-	if fid.Iounit == 0 || fid.Iounit > clnt.Msize-p.IOHDRSZ {
-		fid.Iounit = clnt.Msize - p.IOHDRSZ
+	if fid.Iounit == 0 || fid.Iounit > clnt.Msize-ixp.IOHDRSZ {
+		fid.Iounit = clnt.Msize - ixp.IOHDRSZ
 	}
 	fid.Mode = mode
 	return nil

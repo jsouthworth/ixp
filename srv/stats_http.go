@@ -3,21 +3,21 @@
 package srv
 
 import (
-	"code.google.com/p/go9p/p"
 	"fmt"
+	"github.com/jsouthworth/ixp"
 	"io"
 	"net/http"
 	"sync"
 )
 
 var mux sync.RWMutex
-var stat map[string]http.Handler
+var stat map[string]httixp.Handler
 var once sync.Once
 
-func register(s string, h http.Handler) {
+func register(s string, h httixp.Handler) {
 	mux.Lock()
 	if stat == nil {
-		stat = make(map[string]http.Handler)
+		stat = make(map[string]httixp.Handler)
 	}
 
 	if h == nil {
@@ -29,8 +29,8 @@ func register(s string, h http.Handler) {
 }
 func (srv *Srv) statsRegister() {
 	once.Do(func() {
-		http.HandleFunc("/go9p/", StatsHandler)
-		go http.ListenAndServe(":6060", nil)
+		httixp.HandleFunc("/go9p/", StatsHandler)
+		go httixp.ListenAndServe(":6060", nil)
 	})
 
 	register("/go9p/srv/"+srv.Id, srv)
@@ -40,7 +40,7 @@ func (srv *Srv) statsUnregister() {
 	register("/go9p/srv/"+srv.Id, nil)
 }
 
-func (srv *Srv) ServeHTTP(c http.ResponseWriter, r *http.Request) {
+func (srv *Srv) ServeHTTP(c httixp.ResponseWriter, r *httixp.Request) {
 	io.WriteString(c, fmt.Sprintf("<html><body><h1>Server %s</h1>", srv.Id))
 	defer io.WriteString(c, "</body></html>")
 
@@ -66,7 +66,7 @@ func (conn *Conn) statsUnregister() {
 	register("/go9p/srv/"+conn.Srv.Id+"/conn/"+conn.Id, nil)
 }
 
-func (conn *Conn) ServeHTTP(c http.ResponseWriter, r *http.Request) {
+func (conn *Conn) ServeHTTP(c httixp.ResponseWriter, r *httixp.Request) {
 	io.WriteString(c, fmt.Sprintf("<html><body><h1>Connection %s/%s</h1>", conn.Srv.Id, conn.Id))
 	defer io.WriteString(c, "</body></html>")
 
@@ -85,7 +85,7 @@ func (conn *Conn) ServeHTTP(c http.ResponseWriter, r *http.Request) {
 		fs := conn.Srv.Log.Filter(conn, DbgLogFcalls)
 		io.WriteString(c, fmt.Sprintf("<h2>Last %d 9P messages</h2>", len(fs)))
 		for i, l := range fs {
-			fc := l.Data.(*p.Fcall)
+			fc := l.Data.(*ixp.Fcall)
 			if fc.Type == 0 {
 				continue
 			}
@@ -94,7 +94,7 @@ func (conn *Conn) ServeHTTP(c http.ResponseWriter, r *http.Request) {
 			if fc.Type%2 == 0 {
 				// try to find the response for the T message
 				for j := i + 1; j < len(fs); j++ {
-					rc := fs[j].Data.(*p.Fcall)
+					rc := fs[j].Data.(*ixp.Fcall)
 					if rc.Tag == fc.Tag {
 						lbl = fmt.Sprintf("<a href='#fc%d'>&#10164;</a>", j)
 						break
@@ -103,7 +103,7 @@ func (conn *Conn) ServeHTTP(c http.ResponseWriter, r *http.Request) {
 			} else {
 				// try to find the request for the R message
 				for j := i - 1; j >= 0; j-- {
-					tc := fs[j].Data.(*p.Fcall)
+					tc := fs[j].Data.(*ixp.Fcall)
 					if tc.Tag == fc.Tag {
 						lbl = fmt.Sprintf("<a href='#fc%d'>&#10166;</a>", j)
 						break
@@ -116,7 +116,7 @@ func (conn *Conn) ServeHTTP(c http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func StatsHandler(c http.ResponseWriter, r *http.Request) {
+func StatsHandler(c httixp.ResponseWriter, r *httixp.Request) {
 	mux.RLock()
 	if v, ok := stat[r.URL.Path]; ok {
 		v.ServeHTTP(c, r)

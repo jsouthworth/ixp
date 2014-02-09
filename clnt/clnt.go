@@ -7,8 +7,8 @@
 package clnt
 
 import (
-	"code.google.com/p/go9p/p"
 	"fmt"
+	"github.com/jsouthworth/ixp"
 	"log"
 	"net"
 	"sync"
@@ -37,7 +37,7 @@ type Clnt struct {
 	Dotu       bool   // If true, 9P2000.u protocol is spoken
 	Root       *Fid   // Fid that points to the rood directory
 	Id         string // Used when printing debug messages
-	Log        *p.Logger
+	Log        *ixp.Logger
 
 	conn     net.Conn
 	tagpool  *pool
@@ -49,7 +49,7 @@ type Clnt struct {
 	err      error
 
 	reqchan chan *Req
-	tchan   chan *p.Fcall
+	tchan   chan *ixp.Fcall
 
 	next, prev *Clnt
 }
@@ -58,13 +58,13 @@ type Clnt struct {
 // low level methods that correspond directly to the 9P2000 message requests
 type Fid struct {
 	sync.Mutex
-	Clnt   *Clnt // Client the fid belongs to
-	Iounit uint32
-	p.Qid         // The Qid description for the file
-	Mode   uint8  // Open mode (one of p.O* values) (if file is open)
-	Fid    uint32 // Fid number
-	p.User        // The user the fid belongs to
-	walked bool   // true if the fid points to a walked file on the server
+	Clnt     *Clnt // Client the fid belongs to
+	Iounit   uint32
+	ixp.Qid         // The Qid description for the file
+	Mode     uint8  // Open mode (one of ixp.O* values) (if file is open)
+	Fid      uint32 // Fid number
+	ixp.User        // The user the fid belongs to
+	walked   bool   // true if the fid points to a walked file on the server
 }
 
 // The file is similar to the Fid, but is used in the high-level client
@@ -85,8 +85,8 @@ type pool struct {
 type Req struct {
 	sync.Mutex
 	Clnt       *Clnt
-	Tc         *p.Fcall
-	Rc         *p.Fcall
+	Tc         *ixp.Fcall
+	Rc         *ixp.Fcall
 	Err        error
 	Done       chan *Req
 	tag        uint16
@@ -101,18 +101,18 @@ type ClntList struct {
 
 var clnts *ClntList
 var DefaultDebuglevel int
-var DefaultLogger *p.Logger
+var DefaultLogger *ixp.Logger
 
 func (clnt *Clnt) Rpcnb(r *Req) error {
 	var tag uint16
 
-	if r.Tc.Type == p.Tversion {
-		tag = p.NOTAG
+	if r.Tc.Type == ixp.Tversion {
+		tag = ixp.NOTAG
 	} else {
 		tag = r.tag
 	}
 
-	p.SetTag(r.Tc, tag)
+	ixp.SetTag(r.Tc, tag)
 	clnt.Lock()
 	if clnt.err != nil {
 		clnt.Unlock()
@@ -133,7 +133,7 @@ func (clnt *Clnt) Rpcnb(r *Req) error {
 	return nil
 }
 
-func (clnt *Clnt) Rpc(tc *p.Fcall) (rc *p.Fcall, err error) {
+func (clnt *Clnt) Rpc(tc *ixp.Fcall) (rc *ixp.Fcall, err error) {
 	r := clnt.ReqAlloc()
 	r.Tc = tc
 	r.Done = make(chan *Req)
@@ -165,7 +165,7 @@ func (clnt *Clnt) recv() {
 
 		n, oerr := clnt.conn.Read(buf[pos:])
 		if oerr != nil || n == 0 {
-			err = &p.Error{oerr.Error(), p.EIO}
+			err = &ixp.Error{oerr.Error(), ixp.EIO}
 			clnt.Lock()
 			clnt.err = err
 			clnt.Unlock()
@@ -174,7 +174,7 @@ func (clnt *Clnt) recv() {
 
 		pos += n
 		for pos > 4 {
-			sz, _ := p.Gint32(buf)
+			sz, _ := ixp.Gint32(buf)
 			if pos < int(sz) {
 				if len(buf) < int(sz) {
 					b := make([]byte, clnt.Msize*8)
@@ -186,7 +186,7 @@ func (clnt *Clnt) recv() {
 				break
 			}
 
-			fc, err, fcsize := p.Unpack(buf, clnt.Dotu)
+			fc, err, fcsize := ixp.Unpack(buf, clnt.Dotu)
 			clnt.Lock()
 			if err != nil {
 				clnt.err = err
@@ -214,7 +214,7 @@ func (clnt *Clnt) recv() {
 			}
 
 			if r == nil {
-				clnt.err = &p.Error{"unexpected response", p.EINVAL}
+				clnt.err = &ixp.Error{"unexpected response", ixp.EINVAL}
 				clnt.conn.Close()
 				clnt.Unlock()
 				goto closed
@@ -235,13 +235,13 @@ func (clnt *Clnt) recv() {
 			clnt.Unlock()
 
 			if r.Tc.Type != r.Rc.Type-1 {
-				if r.Rc.Type != p.Rerror {
-					r.Err = &p.Error{"invalid response", p.EINVAL}
+				if r.Rc.Type != ixp.Rerror {
+					r.Err = &ixp.Error{"invalid response", ixp.EINVAL}
 					log.Println(fmt.Sprintf("TTT %v", r.Tc))
 					log.Println(fmt.Sprintf("RRR %v", r.Rc))
 				} else {
 					if r.Err == nil {
-						r.Err = &p.Error{r.Rc.Error, r.Rc.Errornum}
+						r.Err = &ixp.Error{r.Rc.Error, r.Rc.Errornum}
 					}
 				}
 			}
@@ -335,12 +335,12 @@ func NewClnt(c net.Conn, msize uint32, dotu bool) *Clnt {
 	clnt.Debuglevel = DefaultDebuglevel
 	clnt.Log = DefaultLogger
 	clnt.Id = c.RemoteAddr().String() + ":"
-	clnt.tagpool = newPool(uint32(p.NOTAG))
-	clnt.fidpool = newPool(p.NOFID)
+	clnt.tagpool = newPool(uint32(ixp.NOTAG))
+	clnt.fidpool = newPool(ixp.NOFID)
 	clnt.reqout = make(chan *Req)
 	clnt.done = make(chan bool)
 	clnt.reqchan = make(chan *Req, 16)
-	clnt.tchan = make(chan *p.Fcall, 16)
+	clnt.tchan = make(chan *ixp.Fcall, 16)
 
 	go clnt.recv()
 	go clnt.send()
@@ -373,8 +373,8 @@ func Connect(c net.Conn, msize uint32, dotu bool) (*Clnt, error) {
 		ver = "9P2000.u"
 	}
 
-	tc := p.NewFcall(clnt.Msize)
-	err := p.PackTversion(tc, clnt.Msize, ver)
+	tc := ixp.NewFcall(clnt.Msize)
+	err := ixp.PackTversion(tc, clnt.Msize, ver)
 	if err != nil {
 		return nil, err
 	}
@@ -401,16 +401,16 @@ func (clnt *Clnt) FidAlloc() *Fid {
 	return fid
 }
 
-func (clnt *Clnt) NewFcall() *p.Fcall {
+func (clnt *Clnt) NewFcall() *ixp.Fcall {
 	select {
 	case tc := <-clnt.tchan:
 		return tc
 	default:
 	}
-	return p.NewFcall(clnt.Msize)
+	return ixp.NewFcall(clnt.Msize)
 }
 
-func (clnt *Clnt) FreeFcall(fc *p.Fcall) {
+func (clnt *Clnt) FreeFcall(fc *ixp.Fcall) {
 	if fc != nil && len(fc.Buf) >= int(clnt.Msize) {
 		select {
 		case clnt.tchan <- fc:
@@ -450,7 +450,7 @@ func (clnt *Clnt) ReqFree(req *Req) {
 	}
 }
 
-func (clnt *Clnt) logFcall(fc *p.Fcall) {
+func (clnt *Clnt) logFcall(fc *ixp.Fcall) {
 	if clnt.Debuglevel&DbgLogPackets != 0 {
 		pkt := make([]byte, len(fc.Pkt))
 		copy(pkt, fc.Pkt)
@@ -458,7 +458,7 @@ func (clnt *Clnt) logFcall(fc *p.Fcall) {
 	}
 
 	if clnt.Debuglevel&DbgLogFcalls != 0 {
-		f := new(p.Fcall)
+		f := new(ixp.Fcall)
 		*f = *fc
 		f.Pkt = nil
 		clnt.Log.Log(f, clnt, DbgLogFcalls)

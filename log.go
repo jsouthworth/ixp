@@ -1,4 +1,4 @@
-package p
+package ixp
 
 type Log struct {
 	Data  interface{}

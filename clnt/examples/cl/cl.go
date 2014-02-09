@@ -4,10 +4,10 @@ package main
 
 import (
 	"bufio"
-	"code.google.com/p/go9p/p"
-	"code.google.com/p/go9p/p/clnt"
 	"flag"
 	"fmt"
+	"github.com/jsouthworth/ixp"
+	"github.com/jsouthworth/ixp/clnt"
 	"io"
 	"os"
 	"path"
@@ -69,9 +69,9 @@ func b(mode uint32, s uint8) string {
 // Convert file mode bits to string representation
 func modetostr(mode uint32) string {
 	d := "-"
-	if mode&p.DMDIR != 0 {
+	if mode&ixp.DMDIR != 0 {
 		d = "d"
-	} else if mode&p.DMAPPEND != 0 {
+	} else if mode&ixp.DMAPPEND != 0 {
 		d = "a"
 	}
 	return fmt.Sprintf("%s%s%s%s", d, b(mode, 6), b(mode, 3), b(mode, 0))
@@ -80,9 +80,9 @@ func modetostr(mode uint32) string {
 // Write the string s to remote file f. Create f if it doesn't exist
 func writeone(c *clnt.Clnt, f, s string) {
 	fname := normpath(f)
-	file, oserr := c.FCreate(fname, 0666, p.OWRITE)
+	file, oserr := c.FCreate(fname, 0666, ixp.OWRITE)
 	if oserr != nil {
-		file, oserr = c.FOpen(fname, p.OWRITE|p.OTRUNC)
+		file, oserr = c.FOpen(fname, ixp.OWRITE|ixp.OTRUNC)
 		if oserr != nil {
 			fmt.Fprintf(os.Stderr, "error opening %s: %v\n", fname, oserr)
 			return
@@ -134,7 +134,7 @@ func cmdstat(c *clnt.Clnt, s []string) {
 	}
 }
 
-func dirtostr(d *p.Dir) string {
+func dirtostr(d *ixp.Dir) string {
 	return fmt.Sprintf("%s %s %s %-8d\t\t%s", modetostr(d.Mode), d.Uid, d.Gid, d.Length, d.Name)
 }
 
@@ -144,8 +144,8 @@ func lsone(c *clnt.Clnt, s string, long bool) {
 		fmt.Fprintf(os.Stderr, "error stat: %v\n", oserr)
 		return
 	}
-	if st.Mode&p.DMDIR != 0 {
-		file, oserr := c.FOpen(s, p.OREAD)
+	if st.Mode&ixp.DMDIR != 0 {
+		file, oserr := c.FOpen(s, ixp.OREAD)
 		if oserr != nil {
 			fmt.Fprintf(os.Stderr, "error opening dir: %s\n", oserr)
 			return
@@ -198,7 +198,7 @@ func walkone(c *clnt.Clnt, s string, fileok bool) {
 		return
 	}
 
-	if fileok != true && (fid.Type&p.QTDIR == 0) {
+	if fileok != true && (fid.Type&ixp.QTDIR == 0) {
 		fmt.Fprintf(os.Stderr, "can't cd to file [%s]\n", ncwd)
 		return
 	}
@@ -218,7 +218,7 @@ func cmdcat(c *clnt.Clnt, s []string) {
 Outer:
 	for _, f := range s {
 		fname := normpath(f)
-		file, oserr := c.FOpen(fname, p.OREAD)
+		file, oserr := c.FOpen(fname, ixp.OREAD)
 		if oserr != nil {
 			fmt.Fprintf(os.Stderr, "error opening %s: %v\n", f, oserr)
 			continue Outer
@@ -240,7 +240,7 @@ Outer:
 // Create a single directory on remote server
 func mkone(c *clnt.Clnt, s string) {
 	fname := normpath(s)
-	file, oserr := c.FCreate(fname, 0777|p.DMDIR, p.OWRITE)
+	file, oserr := c.FCreate(fname, 0777|ixp.DMDIR, ixp.OWRITE)
 	if oserr != nil {
 		fmt.Fprintf(os.Stderr, "error creating directory %s: %v\n", fname, oserr)
 		return
@@ -275,7 +275,7 @@ func cmdget(c *clnt.Clnt, s []string) {
 	}
 	defer tofile.Close()
 
-	file, ferr := c.FOpen(from, p.OREAD)
+	file, ferr := c.FOpen(from, ixp.OREAD)
 	if ferr != nil {
 		fmt.Fprintf(os.Stderr, "error opening %s for writing: %s\n", to, err)
 		return
@@ -327,9 +327,9 @@ func cmdput(c *clnt.Clnt, s []string) {
 	}
 	defer fromfile.Close()
 
-	file, ferr := c.FOpen(to, p.OWRITE|p.OTRUNC)
+	file, ferr := c.FOpen(to, ixp.OWRITE|ixp.OTRUNC)
 	if ferr != nil {
-		file, ferr = c.FCreate(to, 0666, p.OWRITE)
+		file, ferr = c.FCreate(to, 0666, ixp.OWRITE)
 		if ferr != nil {
 			fmt.Fprintf(os.Stderr, "error opening %s for writing: %s\n", to, err)
 			return
@@ -441,7 +441,7 @@ func interactive(c *clnt.Clnt) {
 }
 
 func main() {
-	var user p.User
+	var user ixp.User
 	var err error
 	var c *clnt.Clnt
 	var file *clnt.File
@@ -449,9 +449,9 @@ func main() {
 	flag.Parse()
 
 	if *ouser == "" {
-		user = p.OsUsers.Uid2User(os.Geteuid())
+		user = ixp.OsUsers.Uid2User(os.Geteuid())
 	} else {
-		user = p.OsUsers.Uname2User(*ouser)
+		user = ixp.OsUsers.Uname2User(*ouser)
 	}
 
 	naddr := *addr

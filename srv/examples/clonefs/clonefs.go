@@ -10,10 +10,10 @@
 package main
 
 import (
-	"code.google.com/p/go9p/p"
-	"code.google.com/p/go9p/p/srv"
 	"flag"
 	"fmt"
+	"github.com/jsouthworth/ixp"
+	"github.com/jsouthworth/ixp/srv"
 	"log"
 	"os"
 	"strconv"
@@ -73,7 +73,7 @@ func (cl *ClFile) Write(fid *srv.FFid, data []byte, offset uint64) (int, error) 
 	return len(data), nil
 }
 
-func (cl *ClFile) Wstat(fid *srv.FFid, dir *p.Dir) error {
+func (cl *ClFile) Wstat(fid *srv.FFid, dir *ixp.Dir) error {
 	return nil
 }
 
@@ -93,16 +93,16 @@ func (cl *Clone) Read(fid *srv.FFid, buf []byte, offset uint64) (int, error) {
 	ncl.created = time.Now().String()
 	name := strconv.Itoa(ncl.id)
 
-	err := ncl.Add(root, name, p.OsUsers.Uid2User(os.Geteuid()), nil, 0666, ncl)
+	err := ncl.Add(root, name, ixp.OsUsers.Uid2User(os.Geteuid()), nil, 0666, ncl)
 	if err != nil {
-		return 0, &p.Error{"can not create file", 0}
+		return 0, &ixp.Error{"can not create file", 0}
 	}
 
 	b := []byte(name)
 	if len(buf) < len(b) {
 		// cleanup
 		ncl.File.Remove()
-		return 0, &p.Error{"not enough buffer space for result", 0}
+		return 0, &ixp.Error{"not enough buffer space for result", 0}
 	}
 
 	copy(buf, b)
@@ -115,15 +115,15 @@ func main() {
 	var s *srv.Fsrv
 
 	flag.Parse()
-	user := p.OsUsers.Uid2User(os.Geteuid())
+	user := ixp.OsUsers.Uid2User(os.Geteuid())
 	root = new(srv.File)
-	err = root.Add(nil, "/", user, nil, p.DMDIR|0777, nil)
+	err = root.Add(nil, "/", user, nil, ixp.DMDIR|0777, nil)
 	if err != nil {
 		goto error
 	}
 
 	cl = new(Clone)
-	err = cl.Add(root, "clone", p.OsUsers.Uid2User(os.Geteuid()), nil, 0444, cl)
+	err = cl.Add(root, "clone", ixp.OsUsers.Uid2User(os.Geteuid()), nil, 0444, cl)
 	if err != nil {
 		goto error
 	}

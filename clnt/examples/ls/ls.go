@@ -1,9 +1,9 @@
 package main
 
 import (
-	"code.google.com/p/go9p/p"
-	"code.google.com/p/go9p/p/clnt"
 	"flag"
+	"github.com/jsouthworth/ixp"
+	"github.com/jsouthworth/ixp/clnt"
 	"io"
 	"log"
 	"os"
@@ -13,14 +13,14 @@ var debuglevel = flag.Int("d", 0, "debuglevel")
 var addr = flag.String("addr", "127.0.0.1:5640", "network address")
 
 func main() {
-	var user p.User
+	var user ixp.User
 	var err error
 	var c *clnt.Clnt
 	var file *clnt.File
-	var d []*p.Dir
+	var d []*ixp.Dir
 
 	flag.Parse()
-	user = p.OsUsers.Uid2User(os.Geteuid())
+	user = ixp.OsUsers.Uid2User(os.Geteuid())
 	clnt.DefaultDebuglevel = *debuglevel
 	c, err = clnt.Mount("tcp", *addr, "", user)
 	if err != nil {
@@ -34,7 +34,7 @@ func main() {
 		log.Fatal("error: only one argument expected")
 	}
 
-	file, err = c.FOpen(lsarg, p.OREAD)
+	file, err = c.FOpen(lsarg, ixp.OREAD)
 	if err != nil {
 		log.Fatal(err)
 	}

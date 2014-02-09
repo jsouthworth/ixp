@@ -1,9 +1,9 @@
 package main
 
 import (
-	"code.google.com/p/go9p/p"
-	"code.google.com/p/go9p/p/clnt"
 	"flag"
+	"github.com/jsouthworth/ixp"
+	"github.com/jsouthworth/ixp/clnt"
 	"io"
 	"log"
 	"os"
@@ -14,14 +14,14 @@ var addr = flag.String("addr", "127.0.0.1:5640", "network address")
 
 func main() {
 	var n, m int
-	var user p.User
+	var user ixp.User
 	var err error
 	var c *clnt.Clnt
 	var file *clnt.File
 	var buf []byte
 
 	flag.Parse()
-	user = p.OsUsers.Uid2User(os.Geteuid())
+	user = ixp.OsUsers.Uid2User(os.Geteuid())
 	clnt.DefaultDebuglevel = *debuglevel
 	c, err = clnt.Mount("tcp", *addr, "", user)
 	if err != nil {
@@ -33,9 +33,9 @@ func main() {
 		return
 	}
 
-	file, err = c.FOpen(flag.Arg(0), p.OWRITE|p.OTRUNC)
+	file, err = c.FOpen(flag.Arg(0), ixp.OWRITE|ixp.OTRUNC)
 	if err != nil {
-		file, err = c.FCreate(flag.Arg(0), 0666, p.OWRITE)
+		file, err = c.FCreate(flag.Arg(0), 0666, ixp.OWRITE)
 		if err != nil {
 			goto error
 		}
@@ -58,7 +58,7 @@ func main() {
 		}
 
 		if m != n {
-			err = &p.Error{"short write", 0}
+			err = &ixp.Error{"short write", 0}
 			goto error
 		}
 	}

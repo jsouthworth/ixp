@@ -2,12 +2,12 @@
 package main
 
 import (
-	"code.google.com/p/go9p/p"
-	"code.google.com/p/go9p/p/clnt"
 	"crypto/rand"
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/jsouthworth/ixp"
+	"github.com/jsouthworth/ixp/clnt"
 	"log"
 	"os"
 )
@@ -16,11 +16,11 @@ var debuglevel = flag.Int("d", 0, "debuglevel")
 var addr = flag.String("addr", "127.0.0.1:5640", "network address")
 
 func main() {
-	var user p.User
+	var user ixp.User
 	var file *clnt.File
 
 	flag.Parse()
-	user = p.OsUsers.Uid2User(os.Geteuid())
+	user = ixp.OsUsers.Uid2User(os.Geteuid())
 	clnt.DefaultDebuglevel = *debuglevel
 
 	c, oerr := tls.Dial("tcp", *addr, &tls.Config{
@@ -42,7 +42,7 @@ func main() {
 		return
 	}
 
-	file, oerr = clnt.FOpen(flag.Arg(0), p.OREAD)
+	file, oerr = clnt.FOpen(flag.Arg(0), ixp.OREAD)
 	if oerr != nil {
 		goto oerror
 	}

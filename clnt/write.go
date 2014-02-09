@@ -4,7 +4,7 @@
 
 package clnt
 
-import "code.google.com/p/go9p/p"
+import "github.com/jsouthworth/ixp"
 
 // Write up to len(data) bytes starting from offset. Returns the
 // number of bytes written, or an Error.
@@ -14,7 +14,7 @@ func (clnt *Clnt) Write(fid *Fid, data []byte, offset uint64) (int, error) {
 	}
 
 	tc := clnt.NewFcall()
-	err := p.PackTwrite(tc, fid.Fid, offset, uint32(len(data)), data)
+	err := ixp.PackTwrite(tc, fid.Fid, offset, uint32(len(data)), data)
 	if err != nil {
 		return 0, err
 	}

@@ -4,20 +4,20 @@
 
 package clnt
 
-import "code.google.com/p/go9p/p"
+import "github.com/jsouthworth/ixp"
 
 // Removes the file associated with the Fid. Returns nil if the
 // operation is successful.
 func (clnt *Clnt) Remove(fid *Fid) error {
 	tc := clnt.NewFcall()
-	err := p.PackTremove(tc, fid.Fid)
+	err := ixp.PackTremove(tc, fid.Fid)
 	if err != nil {
 		return err
 	}
 
 	_, err = clnt.Rpc(tc)
 	clnt.fidpool.putId(fid.Fid)
-	fid.Fid = p.NOFID
+	fid.Fid = ixp.NOFID
 
 	return err
 }

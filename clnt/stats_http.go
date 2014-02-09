@@ -3,13 +3,13 @@
 package clnt
 
 import (
-	"code.google.com/p/go9p/p"
 	"fmt"
+	"github.com/jsouthworth/ixp"
 	"io"
 	"net/http"
 )
 
-func (clnt *Clnt) ServeHTTP(c http.ResponseWriter, r *http.Request) {
+func (clnt *Clnt) ServeHTTP(c httixp.ResponseWriter, r *httixp.Request) {
 	io.WriteString(c, fmt.Sprintf("<html><body><h1>Client %s</h1>", clnt.Id))
 	defer io.WriteString(c, "</body></html>")
 
@@ -18,7 +18,7 @@ func (clnt *Clnt) ServeHTTP(c http.ResponseWriter, r *http.Request) {
 		fs := clnt.Log.Filter(clnt, DbgLogFcalls)
 		io.WriteString(c, fmt.Sprintf("<h2>Last %d 9P messages</h2>", len(fs)))
 		for _, l := range fs {
-			fc := l.Data.(*p.Fcall)
+			fc := l.Data.(*ixp.Fcall)
 			if fc.Type != 0 {
 				io.WriteString(c, fmt.Sprintf("<br>%s", fc))
 			}
@@ -26,7 +26,7 @@ func (clnt *Clnt) ServeHTTP(c http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func clntServeHTTP(c http.ResponseWriter, r *http.Request) {
+func clntServeHTTP(c httixp.ResponseWriter, r *httixp.Request) {
 	io.WriteString(c, fmt.Sprintf("<html><body>"))
 	defer io.WriteString(c, "</body></html>")
 
@@ -42,17 +42,17 @@ func clntServeHTTP(c http.ResponseWriter, r *http.Request) {
 }
 
 func (clnt *Clnt) statsRegister() {
-	http.Handle("/go9p/clnt/"+clnt.Id, clnt)
+	httixp.Handle("/go9p/clnt/"+clnt.Id, clnt)
 }
 
 func (clnt *Clnt) statsUnregister() {
-	http.Handle("/go9p/clnt/"+clnt.Id, nil)
+	httixp.Handle("/go9p/clnt/"+clnt.Id, nil)
 }
 
 func (c *ClntList) statsRegister() {
-	http.HandleFunc("/go9p/clnt", clntServeHTTP)
+	httixp.HandleFunc("/go9p/clnt", clntServeHTTP)
 }
 
 func (c *ClntList) statsUnregister() {
-	http.HandleFunc("/go9p/clnt", nil)
+	httixp.HandleFunc("/go9p/clnt", nil)
 }

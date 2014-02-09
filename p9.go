@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// The p9 package provides the definitions and functions used to implement
+// The p9 package ixprovides the definitions and functions used to implement
 // the 9P2000 protocol.
-package p
+package ixp
 
 import (
 	"fmt"

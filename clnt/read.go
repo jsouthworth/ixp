@@ -5,7 +5,7 @@
 package clnt
 
 import (
-	"code.google.com/p/go9p/p"
+	"github.com/jsouthworth/ixp"
 	"io"
 )
 
@@ -18,7 +18,7 @@ func (clnt *Clnt) Read(fid *Fid, offset uint64, count uint32) ([]byte, error) {
 	}
 
 	tc := clnt.NewFcall()
-	err := p.PackTread(tc, fid.Fid, offset, count)
+	err := ixp.PackTread(tc, fid.Fid, offset, count)
 	if err != nil {
 		return nil, err
 	}
@@ -85,9 +85,9 @@ func (file *File) Readn(buf []byte, offset uint64) (int, error) {
 // Returns an array of maximum num entries (if num is 0, returns
 // all entries from the directory). If the operation fails, returns
 // an Error.
-func (file *File) Readdir(num int) ([]*p.Dir, error) {
-	buf := make([]byte, file.fid.Clnt.Msize-p.IOHDRSZ)
-	dirs := make([]*p.Dir, 32)
+func (file *File) Readdir(num int) ([]*ixp.Dir, error) {
+	buf := make([]byte, file.fid.Clnt.Msize-ixp.IOHDRSZ)
+	dirs := make([]*ixp.Dir, 32)
 	pos := 0
 	for {
 		n, err := file.Read(buf)
@@ -100,14 +100,14 @@ func (file *File) Readdir(num int) ([]*p.Dir, error) {
 		}
 
 		for b := buf[0:n]; len(b) > 0; {
-			d, perr := p.UnpackDir(b, file.fid.Clnt.Dotu)
+			d, perr := ixp.UnpackDir(b, file.fid.Clnt.Dotu)
 			if perr != nil {
 				return nil, perr
 			}
 
 			b = b[d.Size+2:]
 			if pos >= len(dirs) {
-				s := make([]*p.Dir, len(dirs)+32)
+				s := make([]*ixp.Dir, len(dirs)+32)
 				copy(s, dirs)
 				dirs = s
 			}

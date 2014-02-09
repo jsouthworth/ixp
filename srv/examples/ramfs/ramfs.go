@@ -5,18 +5,18 @@
 package main
 
 import (
-	"code.google.com/p/go9p/p"
-	"code.google.com/p/go9p/p/srv"
 	"flag"
 	"fmt"
+	"github.com/jsouthworth/ixp"
+	"github.com/jsouthworth/ixp/srv"
 	"log"
 	"os"
 )
 
 type Ramfs struct {
 	srv     *srv.Fsrv
-	user    p.User
-	group   p.Group
+	user    ixp.User
+	group   ixp.Group
 	blksz   int
 	blkchan chan []byte
 	zero    []byte // blksz array of zeroes
@@ -115,7 +115,7 @@ func (f *RFile) Remove(fid *srv.FFid) error {
 	return nil
 }
 
-func (f *RFile) Wstat(fid *srv.FFid, dir *p.Dir) error {
+func (f *RFile) Wstat(fid *srv.FFid, dir *ixp.Dir) error {
 	var uid, gid uint32
 
 	f.Lock()
@@ -124,7 +124,7 @@ func (f *RFile) Wstat(fid *srv.FFid, dir *p.Dir) error {
 	up := rsrv.srv.Upool
 	uid = dir.Uidnum
 	gid = dir.Gidnum
-	if uid == p.NOUID && dir.Uid != "" {
+	if uid == ixp.NOUID && dir.Uid != "" {
 		user := up.Uname2User(dir.Uid)
 		if user == nil {
 			return srv.Enouser
@@ -133,7 +133,7 @@ func (f *RFile) Wstat(fid *srv.FFid, dir *p.Dir) error {
 		f.Uidnum = uint32(user.Id())
 	}
 
-	if gid == p.NOUID && dir.Gid != "" {
+	if gid == ixp.NOUID && dir.Gid != "" {
 		group := up.Gname2Group(dir.Gid)
 		if group == nil {
 			return srv.Enouser
@@ -217,22 +217,22 @@ func (f *RFile) expand(sz uint64) {
 
 func main() {
 	var err error
-	var l *p.Logger
+	var l *ixp.Logger
 
 	flag.Parse()
-	rsrv.user = p.OsUsers.Uid2User(os.Geteuid())
-	rsrv.group = p.OsUsers.Gid2Group(os.Getegid())
+	rsrv.user = ixp.OsUsers.Uid2User(os.Geteuid())
+	rsrv.group = ixp.OsUsers.Gid2Group(os.Getegid())
 	rsrv.blksz = *blksize
 	rsrv.blkchan = make(chan []byte, 2048)
 	rsrv.zero = make([]byte, rsrv.blksz)
 
 	root := new(RFile)
-	err = root.Add(nil, "/", rsrv.user, nil, p.DMDIR|0777, root)
+	err = root.Add(nil, "/", rsrv.user, nil, ixp.DMDIR|0777, root)
 	if err != nil {
 		goto error
 	}
 
-	l = p.NewLogger(*logsz)
+	l = ixp.NewLogger(*logsz)
 	rsrv.srv = srv.NewFileSrv(&root.File)
 	rsrv.srv.Dotu = true
 	rsrv.srv.Debuglevel = *debug

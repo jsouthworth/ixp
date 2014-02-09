@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// The srv package provides definitions and functions used to implement
+// The srv package ixprovides definitions and functions used to implement
 // a 9P2000 file server.
 package srv
 
 import (
-	"code.google.com/p/go9p/p"
+	"github.com/jsouthworth/ixp"
 	"net"
 	"sync"
 )
@@ -29,18 +29,18 @@ const (
 	DbgLogPackets                 // keep the last N 9P messages (can be accessed over http)
 )
 
-var Eunknownfid error = &p.Error{"unknown fid", p.EINVAL}
-var Enoauth error = &p.Error{"no authentication required", p.EINVAL}
-var Einuse error = &p.Error{"fid already in use", p.EINVAL}
-var Ebaduse error = &p.Error{"bad use of fid", p.EINVAL}
-var Eopen error = &p.Error{"fid already opened", p.EINVAL}
-var Enotdir error = &p.Error{"not a directory", p.ENOTDIR}
-var Eperm error = &p.Error{"permission denied", p.EPERM}
-var Etoolarge error = &p.Error{"i/o count too large", p.EINVAL}
-var Ebadoffset error = &p.Error{"bad offset in directory read", p.EINVAL}
-var Edirchange error = &p.Error{"cannot convert between files and directories", p.EINVAL}
-var Enouser error = &p.Error{"unknown user", p.EINVAL}
-var Enotimpl error = &p.Error{"not implemented", p.EINVAL}
+var Eunknownfid error = &ixp.Error{"unknown fid", ixp.EINVAL}
+var Enoauth error = &ixp.Error{"no authentication required", ixp.EINVAL}
+var Einuse error = &ixp.Error{"fid already in use", ixp.EINVAL}
+var Ebaduse error = &ixp.Error{"bad use of fid", ixp.EINVAL}
+var Eopen error = &ixp.Error{"fid already opened", ixp.EINVAL}
+var Enotdir error = &ixp.Error{"not a directory", ixp.ENOTDIR}
+var Eperm error = &ixp.Error{"permission denied", ixp.EPERM}
+var Etoolarge error = &ixp.Error{"i/o count too large", ixp.EINVAL}
+var Ebadoffset error = &ixp.Error{"bad offset in directory read", ixp.EINVAL}
+var Edirchange error = &ixp.Error{"cannot convert between files and directories", ixp.EINVAL}
+var Enouser error = &ixp.Error{"unknown user", ixp.EINVAL}
+var Enotimpl error = &ixp.Error{"not implemented", ixp.EINVAL}
 
 // Authentication operations. The file server should implement them if
 // it requires user authentication. The authentication in 9P2000 is
@@ -53,7 +53,7 @@ type AuthOps interface {
 	// is referred by afid.User. The function should return the Qid
 	// for the authentication file, or an Error if the user can't be
 	// authenticated
-	AuthInit(afid *Fid, aname string) (*p.Qid, error)
+	AuthInit(afid *Fid, aname string) (*ixp.Qid, error)
 
 	// AuthDestroy is called when an authentication fid is destroyed.
 	AuthDestroy(afid *Fid)
@@ -144,13 +144,13 @@ type StatsOps interface {
 // that implements the file server operations.
 type Srv struct {
 	sync.Mutex
-	Id         string  // Used for debugging and stats
-	Msize      uint32  // Maximum size of the 9P2000 messages supported by the server
-	Dotu       bool    // If true, the server supports the 9P2000.u extension
-	Debuglevel int     // debug level
-	Upool      p.Users // Interface for finding users and groups known to the file server
-	Maxpend    int     // Maximum pending outgoing requests
-	Log        *p.Logger
+	Id         string    // Used for debugging and stats
+	Msize      uint32    // Maximum size of the 9P2000 messages supported by the server
+	Dotu       bool      // If true, the server supports the 9P2000.u extension
+	Debuglevel int       // debug level
+	Upool      ixp.Users // Interface for finding users and groups known to the file server
+	Maxpend    int       // Maximum pending outgoing requests
+	Log        *ixp.Logger
 
 	ops   interface{}     // operations
 	conns map[*Conn]*Conn // List of connections
@@ -170,7 +170,7 @@ type Conn struct {
 	reqs    map[uint16]*Req // all outstanding requests
 
 	reqout chan *Req
-	rchan  chan *p.Fcall
+	rchan  chan *ixp.Fcall
 	done   chan bool
 
 	// stats
@@ -197,7 +197,7 @@ type Fid struct {
 	Omode     uint8       // Open mode (p.O* flags), if the fid is opened
 	Type      uint8       // Fid type (p.QT* flags)
 	Diroffset uint64      // If directory, the next valid read position
-	User      p.User      // The Fid's user
+	User      ixp.User    // The Fid's user
 	Aux       interface{} // Can be used by the file server implementation for per-Fid data
 }
 
@@ -208,12 +208,12 @@ type Fid struct {
 // should be destroyed.
 type Req struct {
 	sync.Mutex
-	Tc     *p.Fcall // Incoming 9P2000 message
-	Rc     *p.Fcall // Outgoing 9P2000 response
-	Fid    *Fid     // The Fid value for all messages that contain fid[4]
-	Afid   *Fid     // The Fid value for the messages that contain afid[4] (Tauth and Tattach)
-	Newfid *Fid     // The Fid value for the messages that contain newfid[4] (Twalk)
-	Conn   *Conn    // Connection that the request belongs to
+	Tc     *ixp.Fcall // Incoming 9P2000 message
+	Rc     *ixp.Fcall // Outgoing 9P2000 response
+	Fid    *Fid       // The Fid value for all messages that contain fid[4]
+	Afid   *Fid       // The Fid value for the messages that contain afid[4] (Tauth and Tattach)
+	Newfid *Fid       // The Fid value for the messages that contain newfid[4] (Twalk)
+	Conn   *Conn      // Connection that the request belongs to
 
 	status     reqStatus
 	flushreq   *Req
@@ -233,15 +233,15 @@ func (srv *Srv) Start(ops interface{}) bool {
 
 	srv.ops = ops
 	if srv.Upool == nil {
-		srv.Upool = p.OsUsers
+		srv.Upool = ixp.OsUsers
 	}
 
-	if srv.Msize < p.IOHDRSZ {
-		srv.Msize = p.MSIZE
+	if srv.Msize < ixp.IOHDRSZ {
+		srv.Msize = ixp.MSIZE
 	}
 
 	if srv.Log == nil {
-		srv.Log = p.NewLogger(1024)
+		srv.Log = ixp.NewLogger(1024)
 	}
 
 	if sop, ok := (interface{}(srv)).(StatsOps); ok {
@@ -291,7 +291,7 @@ func (req *Req) Process() {
 	srv := conn.Srv
 	tc := req.Tc
 
-	if tc.Fid != p.NOFID && tc.Type != p.Tattach {
+	if tc.Fid != ixp.NOFID && tc.Type != ixp.Tattach {
 		srv.Lock()
 		req.Fid = conn.FidGet(tc.Fid)
 		srv.Unlock()
@@ -303,45 +303,45 @@ func (req *Req) Process() {
 
 	switch req.Tc.Type {
 	default:
-		req.RespondError(&p.Error{"unknown message type", p.EINVAL})
+		req.RespondError(&ixp.Error{"unknown message type", ixp.EINVAL})
 
-	case p.Tversion:
+	case ixp.Tversion:
 		srv.version(req)
 
-	case p.Tauth:
+	case ixp.Tauth:
 		srv.auth(req)
 
-	case p.Tattach:
+	case ixp.Tattach:
 		srv.attach(req)
 
-	case p.Tflush:
+	case ixp.Tflush:
 		srv.flush(req)
 
-	case p.Twalk:
+	case ixp.Twalk:
 		srv.walk(req)
 
-	case p.Topen:
+	case ixp.Topen:
 		srv.open(req)
 
-	case p.Tcreate:
+	case ixp.Tcreate:
 		srv.create(req)
 
-	case p.Tread:
+	case ixp.Tread:
 		srv.read(req)
 
-	case p.Twrite:
+	case ixp.Twrite:
 		srv.write(req)
 
-	case p.Tclunk:
+	case ixp.Tclunk:
 		srv.clunk(req)
 
-	case p.Tremove:
+	case ixp.Tremove:
 		srv.remove(req)
 
-	case p.Tstat:
+	case ixp.Tstat:
 		srv.stat(req)
 
-	case p.Twstat:
+	case ixp.Twstat:
 		srv.wstat(req)
 	}
 }
@@ -355,28 +355,28 @@ func (req *Req) PostProcess() {
 
 	/* call the post-handlers (if needed) */
 	switch req.Tc.Type {
-	case p.Tauth:
+	case ixp.Tauth:
 		srv.authPost(req)
 
-	case p.Tattach:
+	case ixp.Tattach:
 		srv.attachPost(req)
 
-	case p.Twalk:
+	case ixp.Twalk:
 		srv.walkPost(req)
 
-	case p.Topen:
+	case ixp.Topen:
 		srv.openPost(req)
 
-	case p.Tcreate:
+	case ixp.Tcreate:
 		srv.createPost(req)
 
-	case p.Tread:
+	case ixp.Tread:
 		srv.readPost(req)
 
-	case p.Tclunk:
+	case ixp.Tclunk:
 		srv.clunkPost(req)
 
-	case p.Tremove:
+	case ixp.Tremove:
 		srv.removePost(req)
 	}
 
