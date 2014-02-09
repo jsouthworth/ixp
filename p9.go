@@ -101,18 +101,18 @@ const (
 
 // Error values
 const (
-	EPERM      = 1
-	ENOENT     = 2
-	EIO        = 5
-	EEXIST     = 17
-	ENOTDIR    = 20
-	EINVAL     = 22
+	EPERM   = 1
+	ENOENT  = 2
+	EIO     = 5
+	EEXIST  = 17
+	ENOTDIR = 20
+	EINVAL  = 22
 )
 
 // Error represents a 9P2000 (and 9P2000.u) error
 type Error struct {
-	Err      string        // textual representation of the error
-	Errornum uint32	       // numeric representation of the error (9P2000.u)
+	Err      string // textual representation of the error
+	Errornum uint32 // numeric representation of the error (9P2000.u)
 }
 
 // File identifier

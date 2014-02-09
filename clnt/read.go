@@ -5,8 +5,8 @@
 package clnt
 
 import (
-	"io"
 	"code.google.com/p/go9p/p"
+	"io"
 )
 
 // Reads count bytes starting from offset from the file associated with the fid.
