@@ -121,7 +121,10 @@ func NewFileSrv(root *File) *Fsrv {
 
 // Initializes the fields of a file and add it to a directory.
 // Returns nil if successful, or an error.
-func (f *File) Add(dir *File, name string, uid ixp.User, gid ixp.Group, mode uint32, ops interface{}) error {
+func (dir *File) Add(f *File, name string, uid ixp.User, gid ixp.Group, mode uint32, ops interface{}) error {
+	if dir == nil {
+		return Enoent
+	}
 
 	lock.Lock()
 	qpath := qnext
@@ -156,7 +159,7 @@ func (f *File) Add(dir *File, name string, uid ixp.User, gid ixp.Group, mode uin
 	f.Muidnum = ixp.NOUID
 	f.Ext = ""
 
-	if dir != nil {
+	if dir != f {
 		f.Parent = dir
 		dir.Lock()
 		for p := dir.cfirst; p != nil; p = p.next {

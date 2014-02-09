@@ -105,7 +105,7 @@ func (f *RFile) Write(fid *srv.FFid, buf []byte, offset uint64) (int, error) {
 
 func (f *RFile) Create(fid *srv.FFid, name string, perm uint32) (*srv.File, error) {
 	ff := new(RFile)
-	err := ff.Add(&f.File, name, rsrv.user, rsrv.group, perm, ff)
+	err := f.Add(&ff.File, name, rsrv.user, rsrv.group, perm, ff)
 	return &ff.File, err
 }
 
@@ -227,7 +227,7 @@ func main() {
 	rsrv.zero = make([]byte, rsrv.blksz)
 
 	root := new(RFile)
-	err = root.Add(nil, "/", rsrv.user, nil, ixp.DMDIR|0777, root)
+	err = root.Add(&root.File, "/", rsrv.user, nil, ixp.DMDIR|0777, root)
 	if err != nil {
 		goto error
 	}

@@ -93,7 +93,7 @@ func (cl *Clone) Read(fid *srv.FFid, buf []byte, offset uint64) (int, error) {
 	ncl.created = time.Now().String()
 	name := strconv.Itoa(ncl.id)
 
-	err := ncl.Add(root, name, ixp.OsUsers.Uid2User(os.Geteuid()), nil, 0666, ncl)
+	err := root.Add(&ncl.File, name, ixp.OsUsers.Uid2User(os.Geteuid()), nil, 0666, ncl)
 	if err != nil {
 		return 0, &ixp.Error{"can not create file", 0}
 	}
@@ -117,13 +117,13 @@ func main() {
 	flag.Parse()
 	user := ixp.OsUsers.Uid2User(os.Geteuid())
 	root = new(srv.File)
-	err = root.Add(nil, "/", user, nil, ixp.DMDIR|0777, nil)
+	err = root.Add(root, "/", user, nil, ixp.DMDIR|0777, nil)
 	if err != nil {
 		goto error
 	}
 
 	cl = new(Clone)
-	err = cl.Add(root, "clone", ixp.OsUsers.Uid2User(os.Geteuid()), nil, 0444, cl)
+	err = root.Add(&cl.File, "clone", ixp.OsUsers.Uid2User(os.Geteuid()), nil, 0444, cl)
 	if err != nil {
 		goto error
 	}

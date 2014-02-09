@@ -112,7 +112,7 @@ func (f *RFile) Write(fid *srv.FFid, buf []byte, offset uint64) (int, error) {
 
 func (f *RFile) Create(fid *srv.FFid, name string, perm uint32) (*srv.File, error) {
 	ff := new(RFile)
-	err := ff.Add(&f.File, name, rsrv.user, rsrv.group, perm, ff)
+	err := f.Add(&ff.File, name, rsrv.user, rsrv.group, perm, ff)
 	return &ff.File, err
 }
 
