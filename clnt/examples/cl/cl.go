@@ -240,7 +240,7 @@ Outer:
 // Create a single directory on remote server
 func mkone(c *clnt.Clnt, s string) {
 	fname := normpath(s)
-	file, oserr := c.FCreate(fname, 0777|ixp.DMDIR, ixp.OWRITE)
+	file, oserr := c.FCreate(fname, 0777|ixp.DMDIR, ixp.OREAD)
 	if oserr != nil {
 		fmt.Fprintf(os.Stderr, "error creating directory %s: %v\n", fname, oserr)
 		return
