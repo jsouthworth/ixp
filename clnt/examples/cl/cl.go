@@ -15,6 +15,7 @@ import (
 )
 
 var addr = flag.String("addr", "127.0.0.1:5640", "network address")
+var net = flag.String("net", "tcp", "network type")
 var ouser = flag.String("user", "", "user to connect as")
 var cmdfile = flag.String("file", "", "read commands from file")
 var prompt = flag.String("prompt", "9p> ", "prompt for interactive client")
@@ -455,10 +456,11 @@ func main() {
 	}
 
 	naddr := *addr
-	if strings.LastIndex(naddr, ":") == -1 {
+	nnet := *net
+	if nnet == "tcp" && strings.LastIndex(naddr, ":") == -1 {
 		naddr = naddr + ":5640"
 	}
-	c, err = clnt.Mount("tcp", naddr, "", user)
+	c, err = clnt.Mount(nnet, naddr, "", user)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error mounting %s: %s\n", naddr, err)
 		os.Exit(1)
