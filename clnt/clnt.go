@@ -94,12 +94,6 @@ type Req struct {
 	fid        *Fid
 }
 
-type ClntList struct {
-	sync.Mutex
-	clntList, clntLast *Clnt
-}
-
-var clnts *ClntList
 var DefaultDebuglevel int
 var DefaultLogger *ixp.Logger
 
@@ -273,24 +267,6 @@ closed:
 			r.Done <- r
 		}
 	}
-
-	clnts.Lock()
-	if clnt.prev != nil {
-		clnt.prev.next = clnt.next
-	} else {
-		clnts.clntList = clnt.next
-	}
-
-	if clnt.next != nil {
-		clnt.next.prev = clnt.prev
-	} else {
-		clnts.clntLast = clnt.prev
-	}
-	clnts.Unlock()
-
-	if sop, ok := (interface{}(clnt)).(StatsOps); ok {
-		sop.statsUnregister()
-	}
 }
 
 func (clnt *Clnt) send() {
@@ -344,21 +320,6 @@ func NewClnt(c net.Conn, msize uint32, dotu bool) *Clnt {
 
 	go clnt.recv()
 	go clnt.send()
-
-	clnts.Lock()
-	if clnts.clntLast != nil {
-		clnts.clntLast.next = clnt
-	} else {
-		clnts.clntList = clnt
-	}
-
-	clnt.prev = clnts.clntLast
-	clnts.clntLast = clnt
-	clnts.Unlock()
-
-	if sop, ok := (interface{}(clnt)).(StatsOps); ok {
-		sop.statsRegister()
-	}
 
 	return clnt
 }
@@ -462,12 +423,5 @@ func (clnt *Clnt) logFcall(fc *ixp.Fcall) {
 		*f = *fc
 		f.Pkt = nil
 		clnt.Log.Log(f, clnt, DbgLogFcalls)
-	}
-}
-
-func init() {
-	clnts = new(ClntList)
-	if sop, ok := (interface{}(clnts)).(StatsOps); ok {
-		sop.statsRegister()
 	}
 }
