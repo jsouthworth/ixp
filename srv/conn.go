@@ -36,10 +36,6 @@ func (srv *Srv) NewConn(c net.Conn) {
 		op.ConnOpened(conn)
 	}
 
-	if sop, ok := (interface{}(conn)).(StatsOps); ok {
-		sop.statsRegister()
-	}
-
 	go conn.recv()
 	go conn.send()
 }
@@ -50,9 +46,6 @@ func (conn *Conn) close() {
 	delete(conn.Srv.conns, conn)
 	conn.Srv.Unlock()
 
-	if sop, ok := (interface{}(conn)).(StatsOps); ok {
-		sop.statsUnregister()
-	}
 	if op, ok := (conn.Srv.ops).(ConnOps); ok {
 		op.ConnClosed(conn)
 	}
